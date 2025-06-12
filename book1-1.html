@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>自成善骑射</title>
+    <link rel="stylesheet" href="./css/reset.css">
+    
+    <style>
+        body, html {
+            height: 100%;
+            width: 100%;    
+        }
+        .bookpage{
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        #pic-bg{
+            position: absolute;
+            width: 100%;
+            height: 100%;
+        }
+        .button-click{
+            animation: breathe 2s ease-in-out infinite;
+        }
+        @keyframes breathe {
+          0% {
+            opacity: 1;
+          }
+          50% {
+            opacity: 0.5;
+          }
+          100% {
+            opacity: 1;
+          }
+        }
+    </style>
+</head>
+<body>
+    <div class="bookpage">
+      <img id="pic-bg" src="./asset/img/bg-jiashen.png">
+      <img class="button-click" src="./asset/img/btn-自成善骑射.png">
+    </div>
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+  $(document).ready(function() {
+        var size={
+            width:document.body.clientWidth,
+            height:document.body.clientHeight
+        }
+        $('.button-click').css({
+            'position':'absolute',
+            'width':size.width*181/1280+'px',
+            'height':size.height*541/2272+'px',
+            'left':size.width*970/1280+'px',
+            'top':size.height*223/2272+'px',
+         })
+         $('.button-click').on('click',function(){
+             window.location.href='./book1-2.html';
+         })
+
+
+    })
+    </script>
+</body>
+</html>

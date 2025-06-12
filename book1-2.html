@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>甲申三百年祭</title>
+    <link rel="stylesheet" href="./css/reset.css">
+    <style>
+        body, html {
+            height: 100%;
+            width: 100%;    
+        }
+        #gameCanvas {
+            width: 100%;
+            height: 100%;
+            background:url(./asset/img/bg-plane.png)0 0 no-repeat;
+            background-size: cover;
+            overflow: hidden;
+            touch-action: none;
+        }
+        #player {
+            position: absolute;
+            bottom: 10%;
+            left: 50%;
+            transform: translateX(-50%);     
+        }
+        .missile {
+            position: absolute;
+            top: 50px;
+            z-index: 2;
+        }
+        @keyframes fall {
+            0% {
+                transform: translateY(0);
+            }
+            100% {
+                transform: translateY(100vh);
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="gameCanvas">
+        <img class="blood" id="blood1" src="./asset/img/blood.png" alt="">
+        <img class="blood" id="blood2" src="./asset/img/blood.png" alt="">
+        <img class="blood" id="blood3" src="./asset/img/blood.png" alt="">
+        <img id="word-score" src="./asset/img/score.png">
+        <span id="score">0</span>
+        <img id="player" src="./asset/img/李自成.png">
+        <img id="word-health" src="./asset/img/health.png">
+    </div>    
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    <script>
+        $(document).ready(function() {
+
+            var size={
+                    width:document.body.clientWidth,
+                    height:document.body.clientHeight 
+                }
+
+            $('#word-health').css({
+                position: 'absolute',
+                'width':size.width*171/1280+'px',
+                'height':size.height*70/2272+'px',
+                'left':size.width*673/1280+'px',
+                'top':size.height*111/2272+'px',
+            });
+            $('#word-score').css({
+                position: 'absolute',
+                'width':size.width*179/1280+'px',
+                'height':size.height*68/2272+'px',
+                'left':size.width*124/1280+'px',
+                'top':size.height*113/2272+'px',
+            });
+            $('#score').css({
+                position: 'absolute',
+                'left':size.width*324/1280+'px',
+                'top':size.height*123/2272+'px',
+            });
+            $('#blood1').css({
+                position: 'absolute',
+                'width':size.width*88/1280+'px',
+                'height':size.height*80/2272+'px',
+                'left':size.width*875/1280+'px',
+                'top':size.height*109/2272+'px',
+            });
+            $('#blood2').css({
+                position: 'absolute',
+                'width':size.width*88/1280+'px',
+                'height':size.height*80/2272+'px',
+                'left':size.width*975/1280+'px',
+                'top':size.height*109/2272+'px',
+            });
+            $('#blood3').css({
+                position: 'absolute',
+                'width':size.width*88/1280+'px',
+                'height':size.height*80/2272+'px',
+                'left':size.width*1075/1280+'px',
+                'top':size.height*109/2272+'px',
+            });
+            const canvas = $('#gameCanvas');
+            const player = $('#player');
+            player.css({
+                position: 'absolute',
+                'width':size.width*179/1280+'px',
+                'height':size.height*348/2272+'px',
+            });
+
+
+            let missiles = [];
+            let score = 0; // 初始得分
+            let health = 3; // 初始血量
+            let missileCount = 0; // 当前导弹数量
+
+            // 定义导弹生成的x轴位置
+            const missilePositions = [canvas.width() * 0.05,canvas.width() * 0.15, canvas.width() * 0.3,canvas.width() * 0.45,canvas.width() * 0.6, canvas.width() * 0.75, canvas.width()*0.9];
+
+            function spawnMissile() {
+                if (missileCount >= 100) return; // 限制导弹数量不超过100
+
+                const missile = $('<img class="missile" src="./asset/img/arrow.png"></img>"');
+
+                missile.css({
+                    position: 'absolute',
+                    zIndex: 2,
+                    'width':size.width*44/1280+'px',
+                    'height':size.height*199/2272+'px',
+                });
+                const position = missilePositions[Math.floor(Math.random() * missilePositions.length)];
+                missile.css({
+                    left: position - 10, // 确保导弹在画布内
+                    top: '-50px' // 初始位置在屏幕顶部之外
+                });
+                canvas.append(missile);
+                missiles.push(missile);
+                missileCount++;
+
+                missile.animate({
+                    top: canvas.height() + 50 // 移动到屏幕底部
+                }, 3000, 'linear', function() {
+                    $(this).remove();
+                    const index = missiles.indexOf(missile);
+                    if (index > -1) {
+                        missiles.splice(index, 1);
+                    }
+                    missileCount--;
+                    // 导弹到达底部，增加得分
+                    score++;
+                    updateScore();
+                });
+            }
+
+            function movePlayer(event) {
+                // 判断事件类型，处理触摸事件和键盘事件
+                let moveX;
+                if (event.type === 'touchmove') {
+                    moveX = event.originalEvent.touches[0].clientX - canvas.offset().left - player.width() / 2;
+                } else {
+                    moveX = event.keyCode === 37 ? player.position().left - 5 : player.position().left + 5;
+                }
+
+                // 限制玩家飞机不超过画布边界
+                const newLeft = Math.max(0, Math.min(moveX, canvas.width() - player.width()));
+                player.css({'left': newLeft + 'px'});
+            }
+
+            function checkCollision() {
+                missiles.forEach(missile => {
+                    const missileRect = missile[0].getBoundingClientRect();
+                    const playerRect = player[0].getBoundingClientRect();
+                    if (missileRect.left < playerRect.right && missileRect.right > playerRect.left &&
+                        missileRect.top < playerRect.bottom && missileRect.top + missileRect.height > playerRect.top) {
+                        health--;
+                        switch (health) {
+                            case 2:
+                                $('#blood3').hide()
+                                break;
+                            case 1:
+                                $('#blood2').hide();
+                                break;
+                            case 0:
+                                $('#blood1').hide();
+                        }
+                        missile.remove();
+                        const index = missiles.indexOf(missile);
+                        if (index > -1) {
+                            missiles.splice(index, 1);
+                        }
+                        missileCount--;
+                        if (health <= 0) {
+                            window.location.href='./book1-end-fail.html';
+                        }
+                    }
+                });
+            }
+
+            function updateScore() {
+                // 更新得分显示，这里需要一个元素来显示得分
+                $('#score').text(score);
+                if(score>=10){
+                    window.location.href='./book1-end-success.html';
+                }
+            }
+
+            function gameLoop() {
+                spawnMissile();
+                checkCollision();
+                setTimeout(gameLoop, 150); // 每100毫秒生成一个导弹
+            }
+
+            $(document).keydown(movePlayer);
+            $(document).on('touchmove', movePlayer); // 为触摸屏设备添加触摸事件
+
+            gameLoop();
+        });
+      </script>
+</body>
+</html>
